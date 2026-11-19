@@ -16,6 +16,8 @@ struct TabSidebar: View {
     let draggingTabID: () -> UUID?
     let onControl: (Tab, ControlCommand) -> Void
     var repoColorOverrides: [String: PaneTint] = [:]
+    /// Rows drop their minimap for a Claude status icon, to fit more tabs.
+    var compactTabs = false
     var jumpLabels: [UUID: String] = [:]
     var onJumpToSurface: ((UUID, UUID) -> Void)?
 
@@ -77,7 +79,8 @@ struct TabSidebar: View {
             jumpLabels: jumpLabels,
             onPaneTap: { leafID in
                 onJumpToSurface?(tab.id, leafID)
-            }
+            },
+            compact: compactTabs
         )
         // Shifted inside the drop target, which stays where it was: moving the
         // target itself would carry the row out from under the cursor and

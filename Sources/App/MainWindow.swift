@@ -27,6 +27,7 @@ struct MainWindow: View {
                         appDelegate.applyControl(command, to: tab, surfaceID: surfaceID)
                     },
                     repoColorOverrides: appDelegate.repoColorOverrides,
+                    compactTabs: appDelegate.compactTabs,
                     jumpLabels: appDelegate.jumpState?.leafToLabel ?? [:],
                     onJumpToSurface: { tabID, leafID in
                         appDelegate.exitJumpMode()

@@ -1,5 +1,5 @@
-// ABOUTME: One tab in the sidebar: color bar, editable name, git and directory lines, minimap.
-// ABOUTME: Also maps TabColor cases to slots in the Ghostty ANSI palette.
+// ABOUTME: One tab in the sidebar: color bar, editable name, git and directory lines, and a minimap
+// ABOUTME: or, when compact, a Claude status icon. Also maps TabColor cases to the ANSI palette.
 import SwiftUI
 
 struct TabRow: View {
@@ -9,6 +9,8 @@ struct TabRow: View {
     @Binding var editingTabID: UUID?
     var jumpLabels: [UUID: String] = [:]
     var onPaneTap: ((UUID) -> Void)?
+    /// Drops the minimap for a single Claude status icon beside the name.
+    var compact = false
 
     @State private var editName = ""
     @FocusState private var textFieldFocused: Bool
@@ -28,74 +30,34 @@ struct TabRow: View {
                 .fill(colorBarColor)
                 .frame(width: 4)
 
-            VStack(alignment: .leading, spacing: 3) {
-                // Tab name (editable on double-tap)
-                if isEditing {
-                    TextField("Tab name", text: $editName, onCommit: {
-                        tab.name = editName
-                        editingTabID = nil
-                    })
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 21, weight: .bold))
-                    .focused($textFieldFocused)
-                    .onAppear {
-                        editName = tab.name
-                        // Delay focus slightly so the view is in the hierarchy
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            textFieldFocused = true
-                        }
+            VStack(alignment: .leading, spacing: compact ? 1 : 3) {
+                HStack(spacing: 4) {
+                    nameView
+                    if compact {
+                        Spacer(minLength: 4)
+                        compactAccessory
                     }
-                    .onExitCommand { editingTabID = nil }
-                } else {
-                    Text(info.displayName)
-                        .font(.system(size: 21, weight: .bold))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .onTapGesture(count: 2) {
-                            editingTabID = tab.id
-                        }
                 }
+                detailLines
 
-                // Git info line
-                if let git = info.gitInfo {
-                    HStack(spacing: 4) {
-                        Text(git.repoName)
-                            .foregroundStyle(.secondary)
-                        if let branch = git.branchName {
-                            Text(branch)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .font(.system(size: 16))
-                    .lineLimit(1)
+                if !compact {
+                    MinimapView(
+                        minimap: info.minimap,
+                        tabColor: tabColor,
+                        tabColorOverride: tab.colorOverride,
+                        isActiveTab: isActive,
+                        jumpLabels: jumpLabels,
+                        surfaceDirectories: tab.effectiveSurfaceDirectories,
+                        repoColorOverrides: repoColorOverrides,
+                        surfaceColorOverrides: tab.surfaceColorOverrides,
+                        onPaneTap: onPaneTap
+                    )
+                    .padding(.top, 2)
                 }
-
-                // Directory line (show when no git info, or when dir differs from repo name)
-                if let dir = info.directoryName, info.gitInfo == nil {
-                    Text(dir)
-                        .font(.system(size: 16))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-
-                // Minimap (always shown)
-                MinimapView(
-                    minimap: info.minimap,
-                    tabColor: tabColor,
-                    tabColorOverride: tab.colorOverride,
-                    isActiveTab: isActive,
-                    jumpLabels: jumpLabels,
-                    surfaceDirectories: tab.effectiveSurfaceDirectories,
-                    repoColorOverrides: repoColorOverrides,
-                    surfaceColorOverrides: tab.surfaceColorOverrides,
-                    onPaneTap: onPaneTap
-                )
-                .padding(.top, 2)
             }
             .padding(.horizontal, 8)
-            .padding(.top, 6)
-            .padding(.bottom, 10)
+            .padding(.top, compact ? 4 : 6)
+            .padding(.bottom, compact ? 5 : 10)
 
             Spacer(minLength: 0)
         }
@@ -116,6 +78,82 @@ struct TabRow: View {
                 }
                 .padding(.trailing, -24)
             }
+        }
+    }
+
+    private var nameFontSize: CGFloat { compact ? 17 : 21 }
+    private var detailFontSize: CGFloat { compact ? 13 : 16 }
+
+    /// The tab name, editable on double-tap.
+    @ViewBuilder
+    private var nameView: some View {
+        if isEditing {
+            TextField("Tab name", text: $editName, onCommit: {
+                tab.name = editName
+                editingTabID = nil
+            })
+            .textFieldStyle(.plain)
+            .font(.system(size: nameFontSize, weight: .bold))
+            .focused($textFieldFocused)
+            .onAppear {
+                editName = tab.name
+                // Delay focus slightly so the view is in the hierarchy
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    textFieldFocused = true
+                }
+            }
+            .onExitCommand { editingTabID = nil }
+        } else {
+            Text(info.displayName)
+                .font(.system(size: nameFontSize, weight: .bold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .onTapGesture(count: 2) {
+                    editingTabID = tab.id
+                }
+        }
+    }
+
+    /// The git line, or the directory when there is no git info.
+    @ViewBuilder
+    private var detailLines: some View {
+        if let git = info.gitInfo {
+            HStack(spacing: 4) {
+                Text(git.repoName)
+                    .foregroundStyle(.secondary)
+                if let branch = git.branchName {
+                    Text(branch)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .font(.system(size: detailFontSize))
+            .lineLimit(1)
+        } else if let dir = info.directoryName {
+            Text(dir)
+                .font(.system(size: detailFontSize))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+    }
+
+    /// What a compact row shows where the minimap would be: the tab's Claude
+    /// status, or -- while jump mode is labelling panes -- the labels of its
+    /// panes, which would otherwise have nowhere to be tapped from.
+    @ViewBuilder
+    private var compactAccessory: some View {
+        let labelled = info.minimap.panes.compactMap { pane in
+            jumpLabels[pane.leafID].map { (leafID: pane.leafID, label: $0) }
+        }
+        if !labelled.isEmpty {
+            HStack(spacing: 2) {
+                ForEach(labelled, id: \.leafID) { entry in
+                    JumpBadge(label: entry.label, color: tabColor, large: false)
+                        .onTapGesture { onPaneTap?(entry.leafID) }
+                }
+            }
+        } else if let activity = info.activity {
+            ActivityIndicatorView(state: activity, fontSize: 16)
         }
     }
 

@@ -180,6 +180,9 @@ enum MenuBuilder {
         addItem(to: menu, title: "Toggle Surface Tint", key: "", mods: []) {
             ctx.appDelegate.surfaceTintEnabled.toggle()
         }
+        addItem(to: menu, title: "Toggle Compact Tabs", key: "", mods: []) {
+            ctx.appDelegate.compactTabs.toggle()
+        }
 
         let item = NSMenuItem()
         item.submenu = menu
