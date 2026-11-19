@@ -177,7 +177,7 @@ struct TabTests {
         tab.activityStates[monttyID] = .waiting
         tab.activityWaitingSince[monttyID] = Date()
 
-        let changed = tab.clearWaitingOnTitleChange(for: surfaceID)
+        let changed = tab.clearWaitingOnTitleChange(for: surfaceID, now: Date().addingTimeInterval(60))
 
         #expect(changed == true)
         #expect(tab.activityStates[monttyID] == .working)
@@ -251,7 +251,7 @@ struct TabTests {
             .notification, surfaceID: monttyID, to: &tab.activityStates,
             waitingSince: &tab.activityWaitingSince, isKnownSurface: true
         )
-        let changed = tab.clearWaitingOnTitleChange(for: surfaceID)
+        let changed = tab.clearWaitingOnTitleChange(for: surfaceID, now: Date().addingTimeInterval(60))
 
         #expect(changed == true)
         #expect(tab.activityStates[monttyID] == .working)
@@ -274,7 +274,7 @@ struct TabTests {
         tab.activityStates[monttyID] = .waiting
         tab.activityWaitingSince[monttyID] = Date()
 
-        #expect(tab.clearWaitingOnTitleChange(for: surfaceID) == true)
+        #expect(tab.clearWaitingOnTitleChange(for: surfaceID, now: Date().addingTimeInterval(60)) == true)
     }
 
     @Test func theIdleSweepStillClearsAControlSetWaiting() {

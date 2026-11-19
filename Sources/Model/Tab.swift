@@ -128,16 +128,31 @@ final class Tab: Identifiable {
         }
     }
 
+    /// How long after a `.waiting` begins that a title change is taken as the
+    /// shell or Claude redrawing around the notification, not as the user
+    /// having answered it.
+    static let titleChangeGraceSeconds: TimeInterval = 10
+
+    /// How long a `.waiting` may stand unanswered before it is given up on as
+    /// a lost hook. Long, because an open question is exactly what the user
+    /// wants to find when they come back from being away.
+    static let staleWaitingThreshold: TimeInterval = 30 * 60
+
     /// Safety net: if the given surface is currently `.waiting`, transition to `.working`.
-    /// Called when a new title arrives — a title change is strong evidence Claude is active.
+    /// Called when a new title arrives — a title change is strong evidence Claude is active,
+    /// once the redraws that follow the notification itself have passed.
     /// A `.waiting` the control CLI set is exempt, because an ordinary shell reprints
     /// its title at every prompt and would clear the state the moment it was set.
     /// Returns true if the state changed.
     @discardableResult
-    func clearWaitingOnTitleChange(for surfaceID: UUID) -> Bool {
+    func clearWaitingOnTitleChange(for surfaceID: UUID, now: Date = Date()) -> Bool {
         guard let monttyID = surfaceToMonttyID[surfaceID],
               activityStates[monttyID] == .waiting,
               !waitingCameFromControl(monttyID) else { return false }
+        if let since = activityWaitingSince[monttyID],
+           now.timeIntervalSince(since) < Self.titleChangeGraceSeconds {
+            return false
+        }
         activityStates[monttyID] = .working
         activityWaitingSince.removeValue(forKey: monttyID)
         return true
@@ -154,7 +169,9 @@ final class Tab: Identifiable {
     /// `threshold` seconds back to `.idle`. Protects against lost hook events.
     /// Returns the MONTTY_SURFACE_IDs that were transitioned.
     @discardableResult
-    func sweepStaleWaiting(threshold: TimeInterval = 60, now: Date = Date()) -> [String] {
+    func sweepStaleWaiting(
+        threshold: TimeInterval = Tab.staleWaitingThreshold, now: Date = Date()
+    ) -> [String] {
         var transitioned: [String] = []
         for (monttyID, since) in activityWaitingSince
         where activityStates[monttyID] == .waiting

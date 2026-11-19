@@ -104,23 +104,11 @@ struct ActivityIndicatorView: View {
     /// The glyph size; every frame below scales with it.
     var fontSize: CGFloat = 24
 
-    // Cycle through star characters when working, with per-character scale
-    // factors so each symbol appears roughly the same visual size as "*".
-    private static let thinkingChars: [(char: String, scale: CGFloat)] = [
-        ("*", 1.0),
-        ("\u{2736}", 1.0),   // ✶ six pointed black star
-        ("\u{273B}", 1.0),   // ✻ eight pointed pinwheel star
-        ("\u{2733}", 1.0),   // ✳ eight pointed rectilinear star
-        ("\u{2722}", 1.0),   // ✢ four pointed star
-        ("\u{00B7}", 1.0)    // · middle dot
-    ]
+    @State private var breathing = false
 
-    @State private var charIndex = 0
-    @State private var pulsing = false
-    private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
-
-    /// Loudest to quietest: waiting is a filled badge that pulses, idle a solid
-    /// star, and working a dim star in motion, which asks nothing of the user.
+    /// Loudest to quietest: waiting is a static filled badge, idle a solid
+    /// star, and working a dim star that slowly breathes, which asks nothing
+    /// of the user.
     var body: some View {
         switch state {
         case .waiting:
@@ -129,24 +117,19 @@ struct ActivityIndicatorView: View {
                 .foregroundStyle(.black)
                 .frame(width: fontSize, height: fontSize)
                 .background(Circle().fill(Color.orange))
-                .opacity(pulsing ? 1 : 0.6)
-                .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: pulsing)
-                .onAppear { pulsing = true }
         case .idle:
             Text("*")
                 .font(.system(size: fontSize, design: .monospaced))
                 .foregroundStyle(.orange)
                 .frame(width: fontSize, height: fontSize)
         case .working:
-            let entry = Self.thinkingChars[charIndex % Self.thinkingChars.count]
-            Text(entry.char)
+            Text("*")
                 .font(.system(size: fontSize, design: .monospaced))
-                .foregroundStyle(.secondary.opacity(0.6))
+                .foregroundStyle(.secondary)
                 .frame(width: fontSize, height: fontSize)
-                .scaleEffect(entry.scale)
-                .onReceive(timer) { _ in
-                    charIndex = (charIndex + 1) % Self.thinkingChars.count
-                }
+                .opacity(breathing ? 0.55 : 0.25)
+                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: breathing)
+                .onAppear { breathing = true }
         }
     }
 }
