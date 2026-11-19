@@ -64,7 +64,7 @@ This adds six hook entries to `~/.claude/settings.json` (or `$CLAUDE_CONFIG_DIR/
 
 ## Build from source
 
-Requires macOS 14+, Xcode, [zig](https://ziglang.org/) 0.17.0, and [just](https://github.com/casey/just).
+Requires macOS 14+, Xcode, [zig](https://ziglang.org/) 0.17.x, and [just](https://github.com/casey/just).
 
 ```bash
 just setup      # init submodules, build GhosttyKit

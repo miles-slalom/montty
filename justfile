@@ -1,13 +1,15 @@
 # justfile for montty
 
-# Required zig version (must match ghostty/build.zig.zon minimum_zig_version)
+# Minimum zig version (must match ghostty/build.zig.zon minimum_zig_version).
+# CI installs exactly this version; local builds also accept anything below zig_max.
 zig_version := "0.17.0"
+zig_max := "0.18.0"
 
 # Initialize submodules and build GhosttyKit
 setup:
     git submodule update --init --recursive
     @command -v zig >/dev/null || { echo "Error: zig not installed. Run: brew install zig"; exit 1; }
-    @test "$(zig version)" = "{{zig_version}}" || { echo "Error: zig $(zig version) found, need {{zig_version}}"; exit 1; }
+    @v="$(zig version)"; test "$(printf '%s\n%s\n' "{{zig_version}}" "$v" | sort -V | head -n1)" = "{{zig_version}}" && test "$(printf '%s\n%s\n' "$v" "{{zig_max}}" | sort -V | head -n1)" = "$v" && test "$v" != "{{zig_max}}" || { echo "Error: zig $v found, need >= {{zig_version}} and < {{zig_max}}"; exit 1; }
     @xcrun -sdk macosx metal --version >/dev/null 2>&1 || { echo "Error: Metal Toolchain missing. Run: xcodebuild -downloadComponent MetalToolchain"; exit 1; }
     # Build the xcframework. The zig install step may fail on Ghostty's own
     # app build (DockTilePlugin signing) even when the xcframework succeeds,

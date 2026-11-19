@@ -19,7 +19,7 @@ shipped target is macOS 26. Update the manifest if/when that drift matters.
 
 ## Common commands
 
-- Setup: `just setup` (inits submodules, builds GhosttyKit with zig 0.17.0)
+- Setup: `just setup` (inits submodules, builds GhosttyKit with zig >= 0.17.0, < 0.18)
 - Generate: `just generate` (xcodegen)
 - Build: `just build`
 - Test: `just test`
