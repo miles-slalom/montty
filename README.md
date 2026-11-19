@@ -13,10 +13,12 @@ A macOS terminal app built on [GhosttyKit](https://github.com/ghostty-org/ghostt
 - Claude Code sessions come back after a relaunch: each surface that was running one has `claude --resume <id>` typed at its prompt, ready to run (see [Claude Code hooks](#claude-code-hooks))
 - Click any minimap pane to jump directly to that surface
 - Git branch and directory info in tab sidebar
-- Claude Code status indicators (working, waiting, idle) on minimap panes (see [Claude Code hooks](#claude-code-hooks))
+- Claude Code status indicators, ranked by how much they want you: a `?` badge for waiting, which holds until you type in that pane, a solid star for idle, and a dim, slowly breathing star for working (see [Claude Code hooks](#claude-code-hooks))
+- Compact tabs (View → Toggle Compact Tabs) swap the minimap for a single status icon beside the tab name, so a dozen Claude sessions fit in the sidebar; a tab with several panes shows its most urgent one
 - Standard Ghostty theming from `~/.config/ghostty/config`
-- Multiple windows from one process, opened with `Cmd-N`, each owning its own tabs, which you can drag from one window's sidebar to another
-- The `montty` CLI for setting colors, names, and activity status from a shell or a script (see [docs/montty-cli.md](docs/montty-cli.md))
+- Multiple windows from one process, opened with `Cmd-N`, each owning its own tabs. Drag a tab to reorder it, onto another window's sidebar to move it there, or out onto empty space to open it in a window of its own. A line shows where it will land, and its shells keep running
+- The `montty` CLI for setting colors, names, and activity status, and for opening tabs, from a shell or a script (see [docs/montty-cli.md](docs/montty-cli.md))
+- `montty tab new --claude "<prompt>"` opens a tab running Claude Code seeded with a prompt, so a session can start more work without driving the GUI or needing accessibility permission
 - Colors resolving surface, then tab, then repo, then the automatic git signature, with repo colors shared across every tab in a repo
 - Gradient tints of up to three stops, with a worktree's gradient carrying its parent repo's colors on the leading edge and its own color on the trailing edge
 - Opening the focused pane's directory in an editor (`Cmd-Shift-E`)
@@ -26,7 +28,7 @@ Easy Motion allows movement directly to any terminal surface across tabs:
 
 ![Montty easy motion screenshot](docs/screenshot-easymotion.png)
 
-`Cmd-N` opens another window from the same process. Each window keeps its own tabs and splits; drag a tab onto another window's sidebar to move it there:
+`Cmd-N` opens another window from the same process. Each window keeps its own tabs and splits. Drag a tab onto another window's sidebar to move it there, or drag it out onto empty space to tear it off into a new window. The tab takes its panes with it, so nothing running in them is interrupted:
 
 ![Montty two windows screenshot](docs/screenshot-windows.png)
 
