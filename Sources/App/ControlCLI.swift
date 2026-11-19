@@ -217,8 +217,24 @@ enum ControlCLI {
         return parsed
     }
 
+    /// A `--dir` is relative to where the caller ran this, which the app cannot
+    /// know, so it is made absolute here, and refused if nothing is there.
+    private static func resolvingDirectory(of command: ControlCommand) -> ControlCommand {
+        guard case .newTab(let spec) = command, spec.directory != nil else { return command }
+        let resolved = spec.resolvingDirectory(
+            cwd: FileManager.default.currentDirectoryPath, home: NSHomeDirectory()
+        )
+        var isDirectory: ObjCBool = false
+        guard let path = resolved.directory,
+              FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            fail("not a directory: \(spec.directory ?? "")", .usage)
+        }
+        return .newTab(resolved)
+    }
+
     private static func runControl(command: ControlCommand, surface: String, socketPath: String) -> Never {
-        let request = ControlRequest(surface: surface, command: command)
+        let request = ControlRequest(surface: surface, command: resolvingDirectory(of: command))
         guard let payload = try? request.encoded() else {
             fail("could not encode the request", .usage)
         }

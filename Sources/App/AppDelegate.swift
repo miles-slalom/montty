@@ -463,6 +463,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, GhosttyAppDelegate, Observab
             surfaceTintStrength = strength
             return .applied
         }
+        // Opening a tab changes no tab's state either: the use case adds a new
+        // one to the caller's window and names the surface to create for it.
+        if case .newTab(let spec) = command {
+            guard let monttyID = tab.surfaceToMonttyID[surfaceID] else {
+                return .rejected(.unknownSurface)
+            }
+            apply(useCases.openTab(spec, fromMonttyID: monttyID))
+            return .applied
+        }
         return tab.applyControl(
             command, surfaceID: surfaceID, repoColorOverrides: &repoColorOverrides
         )

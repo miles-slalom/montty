@@ -99,7 +99,11 @@ extension AppDelegate {
             }
             var config = Ghostty.SurfaceConfiguration()
             config.workingDirectory = plan.workingDirectory
-            config.initialInput = plan.resumeCommand
+            // A launch is typed and run; a resume command is only typed.
+            config.initialInput = plan.launch.map { $0.commandLine + "\n" } ?? plan.resumeCommand
+            for (name, value) in plan.launch?.environment ?? [:] {
+                config.environmentVariables[name] = value
+            }
             config.environmentVariables["MONTTY_SURFACE_ID"] = plan.monttyID
             config.environmentVariables["MONTTY_PORT"] = String(Self.hookPort)
             config.environmentVariables["MONTTY_SOCKET"] = HookServer.socketPath

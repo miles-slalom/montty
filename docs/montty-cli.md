@@ -32,6 +32,7 @@ montty surface color <spec>          montty surface color --reset
 montty tab     color <spec>          montty tab     color --reset
 montty repo    color <spec>          montty repo    color --reset
 montty tab     name  <text>          montty tab     name  --reset
+montty tab     new   [--dir <path>] [--name <text>] [--focus] [--claude <prompt>]
 montty surface status <working|waiting|idle|clear>
 montty surface resume-command <cmd>  montty surface resume-command --reset
 montty info
@@ -68,6 +69,33 @@ can be cleared from the GUI.
 Every command targets the surface it runs in, which resolves no matter which
 window holds it. There is no window scope.
 
+## Opening tabs
+
+`montty tab new` opens a tab in the window of the pane that ran it, so a Claude
+Code session can start more work without anyone driving the GUI, and with no
+system accessibility permission.
+
+| flag | effect |
+|---|---|
+| `--dir <path>` | where the tab's shell starts; relative to where you ran the command, `~` allowed. Default: the directory of the pane that ran it. Exit 64 if it is not a directory |
+| `--name <text>` | the tab's name (256 characters at most) |
+| `--claude <prompt>` | run `claude` in the tab, seeded with `<prompt>` as its first message. `--claude ""` runs it with no prompt |
+| `--focus` | select the new tab. Without it the tab opens in the background and you stay where you are |
+
+The tab goes at the end of the window's tabs. It is an ordinary pane in an
+ordinary login shell, so it reports its own status through the Claude Code
+hooks and shows its own icon in the sidebar.
+
+A prompt can be anything, including multiple lines, quotes, `$(...)`, and a
+leading `-`. It never passes through the shell's parser: it goes to the new
+shell in an environment variable (`MONTTY_SEED`), and the only line typed there
+is `claude -- "$MONTTY_SEED"`. The prompt is capped at 100,000 characters.
+
+```bash
+montty tab new --name "review" --dir ~/work/montty --claude "review the last commit for bugs"
+montty tab new --claude "$(cat brief.md)" --focus
+```
+
 ## Examples
 
 ```bash
@@ -82,10 +110,10 @@ montty info | jq -r .git.branch
 | exit | meaning |
 |---|---|
 | 0 | ok |
-| 1 | montty rejected the request (unknown surface, not in a repo, tab name over 256 characters, invalid resume command, a settings file that is not a JSON object) |
+| 1 | montty rejected the request (unknown surface, not in a repo, tab name over 256 characters, invalid resume command, a new-tab prompt that is too long or holds a NUL byte, a settings file that is not a JSON object) |
 | 2 | not running inside a montty pane |
 | 3 | montty is not reachable: not running, or busy and refusing connections |
-| 64 | usage error: unknown verb or property, bad color spec, extra arguments, request over 1 MiB |
+| 64 | usage error: unknown verb or property or flag, bad color spec, extra arguments, a `--dir` that is not a directory, request over 1 MiB |
 
 ## Claude Code hooks
 

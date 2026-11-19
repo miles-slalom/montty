@@ -165,6 +165,11 @@ enum HookServer {
                 "resume command must be 1 to \(ResumeCommand.maxCharacters) characters "
                     + "with no control characters"
             )
+        } catch ControlRequest.DecodeFailure.invalidNewTab {
+            response = .failure(
+                "new tab needs an absolute directory and a prompt of at most "
+                    + "\(NewTab.maxPromptCharacters) characters with no NUL bytes"
+            )
         } catch {
             response = .failure("malformed request")
         }
