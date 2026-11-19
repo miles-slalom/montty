@@ -116,28 +116,37 @@ struct ActivityIndicatorView: View {
     ]
 
     @State private var charIndex = 0
+    @State private var pulsing = false
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
+    /// Loudest to quietest: waiting is a filled badge that pulses, idle a solid
+    /// star, and working a dim star in motion, which asks nothing of the user.
     var body: some View {
-        Group {
-            switch state {
-            case .working:
-                let entry = Self.thinkingChars[charIndex % Self.thinkingChars.count]
-                Text(entry.char)
-                    .frame(width: fontSize, height: fontSize)
-                    .scaleEffect(entry.scale)
-                    .onReceive(timer) { _ in
-                        charIndex = (charIndex + 1) % Self.thinkingChars.count
-                    }
-            case .waiting:
-                Text("*?")
-                    .frame(width: fontSize * 2, height: fontSize)
-            case .idle:
-                Text("*")
-                    .frame(width: fontSize, height: fontSize)
-            }
+        switch state {
+        case .waiting:
+            Text("?")
+                .font(.system(size: fontSize * 0.8, weight: .heavy, design: .monospaced))
+                .foregroundStyle(.black)
+                .frame(width: fontSize, height: fontSize)
+                .background(Circle().fill(Color.orange))
+                .opacity(pulsing ? 1 : 0.6)
+                .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: pulsing)
+                .onAppear { pulsing = true }
+        case .idle:
+            Text("*")
+                .font(.system(size: fontSize, design: .monospaced))
+                .foregroundStyle(.orange)
+                .frame(width: fontSize, height: fontSize)
+        case .working:
+            let entry = Self.thinkingChars[charIndex % Self.thinkingChars.count]
+            Text(entry.char)
+                .font(.system(size: fontSize, design: .monospaced))
+                .foregroundStyle(.secondary.opacity(0.6))
+                .frame(width: fontSize, height: fontSize)
+                .scaleEffect(entry.scale)
+                .onReceive(timer) { _ in
+                    charIndex = (charIndex + 1) % Self.thinkingChars.count
+                }
         }
-        .font(.system(size: fontSize, design: .monospaced))
-        .foregroundStyle(.orange)
     }
 }
