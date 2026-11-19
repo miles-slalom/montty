@@ -25,6 +25,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, GhosttyAppDelegate, Observab
     @Published var surfaceTintEnabled = true
     /// Opacity of the surface tint overlay.
     @Published var surfaceTintStrength = SurfaceTintStrength.default
+    /// Whether sidebar tabs show a single Claude status icon in place of the
+    /// minimap, so a long list of tabs takes less vertical space.
+    @Published var compactTabs = false
     /// Per-repo/worktree color overrides, keyed by repo identity string.
     @Published var repoColorOverrides: [String: PaneTint] = [:]
     /// ANSI palette colors from the Ghostty config (14 colors, reordered).

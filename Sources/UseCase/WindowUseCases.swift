@@ -271,6 +271,7 @@ final class WindowUseCases {
             outcome.applySettings = SettingsUpdate(
                 surfaceTintEnabled: snapshot.surfaceTintEnabled,
                 surfaceTintStrength: snapshot.surfaceTintStrength,
+                compactTabs: snapshot.compactTabs,
                 repoColorOverrides: snapshot.repoColorOverrides
             )
         }
@@ -334,8 +335,8 @@ final class WindowUseCases {
     /// shell can answer -- a window's on-screen frame and a surface's live
     /// working directory -- and the settings that live there.
     func snapshot(
-        surfaceTintEnabled: Bool,
-        surfaceTintStrength: Double,
+        surfaceTint: SurfaceTintSettings,
+        compactTabs: Bool,
         repoColorOverrides: [String: PaneTint],
         frames: [UUID: WindowFrame],
         directories: [UUID: String]
@@ -343,15 +344,14 @@ final class WindowUseCases {
         var snapshot = SessionSnapshotBuilder.snapshot(
             windows: registry.windows,
             keyWindowID: registry.keyWindowID,
-            surfaceTint: SurfaceTintSettings(
-                enabled: surfaceTintEnabled, strength: surfaceTintStrength
-            ),
+            surfaceTint: surfaceTint,
             repoColorOverrides: repoColorOverrides,
             environment: SessionEnvironment(
                 frame: { frames[$0.id] ?? $0.frame },
                 directory: { directories[$0] }
             )
         )
+        snapshot.compactTabs = compactTabs
         snapshot.lastClosedWindow = lastClosedWindow
         return snapshot
     }

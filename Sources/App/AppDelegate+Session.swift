@@ -29,8 +29,10 @@ extension AppDelegate {
             if let pwd = view.pwd { directories[surfaceID] = pwd }
         }
         return useCases.snapshot(
-            surfaceTintEnabled: surfaceTintEnabled,
-            surfaceTintStrength: surfaceTintStrength,
+            surfaceTint: SurfaceTintSettings(
+                enabled: surfaceTintEnabled, strength: surfaceTintStrength
+            ),
+            compactTabs: compactTabs,
             repoColorOverrides: repoColorOverrides,
             frames: frames,
             directories: directories

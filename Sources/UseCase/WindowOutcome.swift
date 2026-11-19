@@ -50,5 +50,6 @@ struct SurfacePlan: Equatable {
 struct SettingsUpdate: Equatable {
     let surfaceTintEnabled: Bool
     let surfaceTintStrength: Double
+    let compactTabs: Bool
     let repoColorOverrides: [String: PaneTint]
 }

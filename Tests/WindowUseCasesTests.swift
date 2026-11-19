@@ -404,8 +404,8 @@ import Testing
         let (useCases, windows) = makeUseCases(windowSurfaceCounts: [1, 1])
 
         let snapshot = useCases.snapshot(
-            surfaceTintEnabled: false,
-            surfaceTintStrength: 0.2,
+            surfaceTint: SurfaceTintSettings(enabled: false, strength: 0.2),
+            compactTabs: false,
             repoColorOverrides: [:],
             frames: [:],
             directories: [:]
@@ -428,8 +428,8 @@ import Testing
         let liveFrame = WindowFrame(x: 10, y: 20, width: 300, height: 400)
 
         let snapshot = useCases.snapshot(
-            surfaceTintEnabled: true,
-            surfaceTintStrength: SurfaceTintStrength.default,
+            surfaceTint: SurfaceTintSettings(enabled: true, strength: SurfaceTintStrength.default),
+            compactTabs: false,
             repoColorOverrides: [:],
             frames: [windows[0].id: liveFrame],
             directories: [trackedSurface: "/Users/dev/work/alpha"]
@@ -592,7 +592,8 @@ import Testing
     /// test left it.
     private func savedSession(_ useCases: WindowUseCases) -> SessionSnapshot {
         useCases.snapshot(
-            surfaceTintEnabled: true, surfaceTintStrength: SurfaceTintStrength.default,
+            surfaceTint: SurfaceTintSettings(enabled: true, strength: SurfaceTintStrength.default),
+            compactTabs: false,
             repoColorOverrides: [:],
             frames: [:], directories: [:]
         )

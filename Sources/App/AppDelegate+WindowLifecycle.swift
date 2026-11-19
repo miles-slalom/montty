@@ -13,6 +13,7 @@ extension AppDelegate {
         if let settings = outcome.applySettings {
             surfaceTintEnabled = settings.surfaceTintEnabled
             surfaceTintStrength = settings.surfaceTintStrength
+            compactTabs = settings.compactTabs
             repoColorOverrides = settings.repoColorOverrides
         }
         for plan in outcome.createWindows {
