@@ -41,6 +41,7 @@ enum ControlArgs {
         case tooManyStops
         case badTintStrength(String)
         case unexpectedArgument(String)
+        case unknownFlag(String)
         case unknownAgent(String)
     }
 
@@ -53,6 +54,8 @@ enum ControlArgs {
           montty repo    color <spec>      montty repo    color --reset
           montty <scope> color             prints what that scope resolves to
           montty tab     name  <text>      montty tab     name  --reset
+          montty tab     new   [--dir <path>] [--name <text>] [--focus]
+                               [--claude <prompt>]
           montty surface status <working|waiting|idle|clear>
           montty surface resume-command <cmd>
                                            montty surface resume-command --reset
@@ -62,6 +65,10 @@ enum ControlArgs {
           montty info
           montty --version                 montty -v
           montty --help                    montty -h
+
+        `tab new` opens a tab beside the one that ran it and leaves you where you
+        are unless --focus is given. --claude runs claude in it, seeded with
+        <prompt> (an empty prompt runs it unseeded).
 
         <spec> is 1 to 3 comma-separated stops. A stop is a palette name
         (green, brightMagenta, neutralBright) or a six-digit hex value with
@@ -159,10 +166,10 @@ enum ControlArgs {
             return .success(.hook(event: arguments[1], hooksVersion: hooksVersion(in: arguments)))
         case "install-hooks", "uninstall-hooks":
             return parseHookSettings(first, arguments: arguments)
+        case "tab" where arguments.count >= 2 && arguments[1] == "new":
+            return parseNewTab(Array(arguments.dropFirst(2)))
         case "tint-strength":
-            guard arguments.count >= 2 else { return .failure(.missingValue("tint-strength")) }
-            guard arguments.count <= 2 else { return .failure(.unexpectedArgument(arguments[2])) }
-            return parseTintStrength(arguments[1])
+            return parseTintStrength(arguments: arguments)
         default:
             return nil
         }
@@ -190,7 +197,10 @@ enum ControlArgs {
         return exactly(2, of: arguments, is: invocation)
     }
 
-    private static func parseTintStrength(_ value: String) -> Result<ParsedInvocation, UsageError> {
+    private static func parseTintStrength(arguments: [String]) -> Result<ParsedInvocation, UsageError> {
+        guard arguments.count >= 2 else { return .failure(.missingValue("tint-strength")) }
+        guard arguments.count <= 2 else { return .failure(.unexpectedArgument(arguments[2])) }
+        let value = arguments[1]
         if value == "--reset" {
             return .success(.control(.setTintStrength(SurfaceTintStrength.default)))
         }
@@ -217,6 +227,35 @@ enum ControlArgs {
         guard let value else { return .success(.showColor(scope)) }
         if value == "--reset" { return .success(.control(.clearColor(scope: scope))) }
         return parseTint(value).map { .control(.setColor(scope: scope, tint: $0)) }
+    }
+
+    /// `tab new` takes its options as flags in any order. A flag's value is the
+    /// argument after it, whatever it looks like, since a prompt is free text.
+    private static func parseNewTab(_ flags: [String]) -> Result<ParsedInvocation, UsageError> {
+        var spec = NewTab()
+        var seen = Set<String>()
+        var index = 0
+        while index < flags.count {
+            let flag = flags[index]
+            index += 1
+            guard ["--dir", "--name", "--claude", "--focus"].contains(flag) else {
+                return .failure(flag.hasPrefix("-") ? .unknownFlag(flag) : .unexpectedArgument(flag))
+            }
+            guard seen.insert(flag).inserted else { return .failure(.unexpectedArgument(flag)) }
+            if flag == "--focus" {
+                spec.focus = true
+                continue
+            }
+            guard index < flags.count else { return .failure(.missingValue(flag)) }
+            let value = flags[index]
+            index += 1
+            switch flag {
+            case "--dir": spec.directory = value
+            case "--name": spec.name = value
+            default: spec.claudePrompt = value
+            }
+        }
+        return .success(.control(.newTab(spec)))
     }
 
     private static func parseName(_ value: String?) -> Result<ParsedInvocation, UsageError> {

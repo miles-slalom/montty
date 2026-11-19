@@ -67,6 +67,12 @@ enum ControlService {
             // so this switch stays exhaustive over ControlCommand.
             return .applied
 
+        case .newTab:
+            // Opens a tab rather than changing one. AppDelegate.applyControl
+            // handles it before a command ever reaches here; this case exists
+            // only so this switch stays exhaustive over ControlCommand.
+            return .applied
+
         case .info:
             return .read(info(target: target, state: state,
                               gitInfoProvider: gitInfoProvider))

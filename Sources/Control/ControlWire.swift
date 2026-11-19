@@ -58,6 +58,9 @@ struct ControlRequest: Equatable {
         /// A resume command that is empty, past `ResumeCommand.maxCharacters`,
         /// or holds a control character that would act on its own when typed.
         case invalidResumeCommand
+        /// A new-tab request whose directory is not absolute or whose prompt
+        /// cannot be an environment variable.
+        case invalidNewTab
         /// No `cmd` field: a hook event from the shell wrapper, which the
         /// legacy ClaudeHookMessage path still owns.
         case legacyHook
@@ -81,6 +84,8 @@ struct ControlRequest: Equatable {
         switch cmd {
         case "info":
             return ControlRequest(surface: surface, command: .info)
+        case "new-tab":
+            return ControlRequest(surface: surface, command: .newTab(try newTabCommand(root)))
         case "set":
             return ControlRequest(
                 surface: surface,
@@ -89,6 +94,24 @@ struct ControlRequest: Equatable {
         default:
             throw DecodeFailure.malformed
         }
+    }
+
+    private static func newTabCommand(_ root: [String: Any]) throws -> NewTab {
+        var spec = NewTab()
+        if let directory = root["dir"] as? String {
+            guard NewTab.isValidDirectory(directory) else { throw DecodeFailure.invalidNewTab }
+            spec.directory = directory
+        }
+        if let name = root["name"] as? String {
+            guard name.count <= ControlWire.maxNameCharacters else { throw DecodeFailure.nameTooLong }
+            spec.name = name
+        }
+        if let prompt = root["claude"] as? String {
+            guard NewTab.isValidPrompt(prompt) else { throw DecodeFailure.invalidNewTab }
+            spec.claudePrompt = prompt
+        }
+        spec.focus = root["focus"] as? Bool ?? false
+        return spec
     }
 
     private static func setCommand(_ root: [String: Any]) throws -> ControlCommand {
@@ -197,6 +220,12 @@ struct ControlRequest: Equatable {
             root["cmd"] = "set"
             root["prop"] = "resumeCommand"
             root["value"] = command ?? NSNull()
+        case .newTab(let spec):
+            root["cmd"] = "new-tab"
+            root["dir"] = spec.directory
+            root["name"] = spec.name
+            root["claude"] = spec.claudePrompt
+            root["focus"] = spec.focus
         }
         return try JSONSerialization.data(withJSONObject: root, options: [.sortedKeys])
     }

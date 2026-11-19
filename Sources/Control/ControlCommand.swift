@@ -32,6 +32,10 @@ enum ControlCommand: Equatable {
     /// What the calling surface types at its prompt on the next restore. nil
     /// clears it.
     case setResumeCommand(String?)
+    /// Opens a tab in the window of the pane that asked. App-wide in the same
+    /// way `setTintStrength` is: it touches no tab's state, so `AppDelegate`
+    /// handles it before a command reaches `ControlService`.
+    case newTab(NewTab)
     case info
 }
 

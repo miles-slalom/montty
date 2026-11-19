@@ -73,6 +73,7 @@ enum ControlCLI {
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private static func usageErrorDetail(_ error: ControlArgs.UsageError) -> String {
         switch error {
         case .noArguments: return "no arguments"
@@ -87,6 +88,7 @@ enum ControlCLI {
                 + "\(SurfaceTintStrength.range.upperBound): \"\(value)\""
         case .unexpectedArgument(let value):
             return "unexpected argument \"\(value)\"; quote a value that contains spaces"
+        case .unknownFlag(let value): return "unknown flag \"\(value)\""
         case .unknownAgent(let value): return "unknown agent \"\(value)\" (supported: claude)"
         }
     }
