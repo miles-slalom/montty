@@ -170,6 +170,41 @@ final class WindowUseCases {
         return outcome
     }
 
+    /// Open a tab in the window of the pane `monttyID` names, on that pane's
+    /// behalf: at the end of the window's tabs, in the background unless
+    /// `spec.focus`, starting in `spec.directory` or else wherever that pane is.
+    /// The tab joins the model now; the outcome names the surface to create.
+    ///
+    /// A pane the registry does not know changes nothing, so a request from a
+    /// pane that has since closed opens no tab in whichever window is in front.
+    func openTab(_ spec: NewTab, fromMonttyID monttyID: String) -> WindowOutcome {
+        guard let origin = registry.locate(monttyID: monttyID) else { return WindowOutcome() }
+        let window = origin.window
+
+        let tab = Tab(name: spec.name ?? "", position: window.tabStore.tabs.count)
+        // `Tab.init` seeds one leaf with a placeholder surface id. Take that
+        // leaf's id: `surfacesCreated` remaps it to the id Ghostty mints.
+        guard let leaf = SplitTree.allLeaves(node: tab.splitRoot).first else {
+            return WindowOutcome()
+        }
+        window.tabStore.append(tab: tab)
+        if spec.focus { window.tabStore.activeTabID = tab.id }
+
+        var outcome = WindowOutcome()
+        outcome.createSurfaces = [
+            SurfacePlan(
+                leafID: leaf.id,
+                windowID: window.id,
+                tabID: tab.id,
+                monttyID: UUID().uuidString,
+                workingDirectory: spec.directory ?? origin.tab.surfaceDirectories[origin.surfaceID],
+                resumeCommand: nil,
+                launch: spec.claudePrompt.map { ClaudeLaunch.launch(prompt: $0) }
+            )
+        ]
+        return outcome
+    }
+
     /// A tab drag was released at `point`, in screen coordinates. Released over
     /// empty space it tears the tab off into a window of its own, sized like the
     /// one it left and opened with its title bar under the cursor. Released over
